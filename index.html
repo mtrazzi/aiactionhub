@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Action Hub</title>
+<meta name="description" content="A calendar of upcoming actions on AI safety: marches, watch parties and community events.">
+<style>
+  :root {
+    --bg: #fafaf7; --surface: #ffffff; --text: #1a1a1a; --muted: #5f5f5a;
+    --border: #e4e3dd; --accent: #c2410c; --accent-soft: #fff1e8; --chip: #f1f0ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121212; --surface: #1c1c1c; --text: #ededed; --muted: #a3a39c;
+            --border: #2e2e2c; --accent: #fb923c; --accent-soft: #2a1a10; --chip: #262624; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 16px 64px; }
+  header h1 { font-size: 2.2rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); max-width: 60ch; }
+  h2 { font-size: 1.15rem; margin: 40px 0 14px; }
+
+  /* Month grid */
+  .cal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .cal-head strong { font-size: 1.05rem; }
+  .cal-head button { background: none; border: 1px solid var(--border); color: var(--text);
+                     border-radius: 8px; width: 34px; height: 34px; cursor: pointer; font-size: 1rem; }
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .dow { font-size: .72rem; text-transform: uppercase; color: var(--muted); text-align: center; padding: 4px 0; }
+  .day { min-height: 64px; border-radius: 8px; padding: 6px; font-size: .85rem; color: var(--muted); }
+  .day.blank { visibility: hidden; }
+  .day.has { background: var(--accent-soft); color: var(--text); cursor: pointer; outline: 2px solid var(--accent); }
+  .day.has .n { font-weight: 700; color: var(--accent); }
+  .day .dot { display: block; font-size: .7rem; line-height: 1.25; margin-top: 4px; color: var(--text); }
+  .day.today .n { text-decoration: underline; }
+  @media (max-width: 560px) { .day { min-height: 44px; } .day .dot { display: none; } }
+
+  /* Event list */
+  .date-label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); font-weight: 700; }
+  .event { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 12px; }
+  .event h3 { margin: 0 0 4px; font-size: 1.2rem; }
+  .event h3 a { color: inherit; }
+  .event .org { color: var(--muted); font-size: .9rem; margin-bottom: 10px; }
+  .event p { margin: 0 0 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 3px 10px; font-size: .82rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { display: inline-block; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: .9rem;
+         border: 1px solid var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-bottom: 12px; }
+  td { padding: 6px 4px; border-top: 1px solid var(--border); vertical-align: top; }
+  td a { color: var(--accent); margin-right: 8px; }
+  footer { margin-top: 48px; color: var(--muted); font-size: .85rem; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>AI Action Hub</h1>
+    <p>Upcoming public actions on AI: marches, watch parties and community events. Pick one, show up, bring a friend.</p>
+  </header>
+
+  <h2>Calendar</h2>
+  <div class="cal">
+    <div class="cal-head">
+      <button id="prev" aria-label="Previous month">‹</button>
+      <strong id="month"></strong>
+      <button id="next" aria-label="Next month">›</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <h2>Upcoming actions</h2>
+  <div id="events"></div>
+
+  <footer>
+    Want an event listed? <a href="https://github.com/mtrazzi/aiactionhub">Open an issue or PR on GitHub</a>.
+  </footer>
+</div>
+
+<script>
+// ---- Add events here. Dates are YYYY-MM-DD. ----
+const EVENTS = [
+  {
+    date: "2026-11-14",
+    title: "AI Treaty March",
+    org: "Stop The AI Race",
+    url: "https://aitreatymarch.org/",
+    summary: "Marches in several cities calling for an international AI treaty, ahead of the Nov 18 Trump–Xi meeting.",
+    tags: ["March", "In person"],
+    cities: [
+      { name: "San Francisco", time: "12:00–2:30 PM", links: [["Partiful","https://partiful.com/e/IKicFMI9yxmA0qZOJN0E"],["Mobilize","https://www.mobilize.us/stoptheairace/event/1059616/"]] },
+      { name: "Washington, DC", time: "11:00 AM–1:00 PM", links: [["Luma","https://luma.com/2j6hkk6a"],["Partiful","https://partiful.com/e/WMRLtTLXNxQeircVi4Cv"],["Mobilize","https://www.mobilize.us/stoptheairace/event/1069471/"]] },
+      { name: "New York", time: "12:00–2:00 PM", links: [["Partiful","https://partiful.com/e/gQVxTbV4c1xxI8k5SzeX"],["Mobilize","https://www.mobilize.us/stoptheairace/event/1069424/"]] },
+      { name: "Montréal", time: "1:00–3:00 PM", links: [["Luma","https://luma.com/g93q6ksk"]] },
+      { name: "Toronto", time: "12:45–3:15 PM", links: [["Luma","https://luma.com/20vit6m2"]] },
+      { name: "Paris", time: "11:00 AM–1:00 PM", links: [["Luma","https://luma.com/stop-pjeb"]] }
+    ],
+    buttons: [["Event site","https://aitreatymarch.org/", true]]
+  },
+  {
+    date: "2026-11-14",
+    title: "AI Reality Check",
+    org: "Humans in Control",
+    url: "https://realitycheckhq.org/",
+    summary: "A nationwide day of local presentations and watch parties on what AI is, its risks, and what people can do about it, hosted in living rooms, libraries and community spaces across the US.",
+    tags: ["Watch party", "Nationwide (US)"],
+    buttons: [["Find an event","https://realitycheckhq.org/find", true],["Host one","https://realitycheckhq.org/apply", false]]
+  }
+];
+
+const pad = n => String(n).padStart(2, "0");
+const key = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const byDate = EVENTS.reduce((acc, e) => ((acc[e.date] ||= []).push(e), acc), {});
+const today = new Date();
+const todayKey = key(today.getFullYear(), today.getMonth(), today.getDate());
+
+// Start on the month of the next upcoming event (or this month).
+const upcoming = EVENTS.map(e => e.date).filter(d => d >= todayKey).sort();
+let [vy, vm] = (upcoming[0] || todayKey).split("-").map(Number); vm -= 1;
+
+function renderCal() {
+  const grid = document.getElementById("grid");
+  document.getElementById("month").textContent =
+    new Date(vy, vm, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  let html = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => `<div class="dow">${d}</div>`).join("");
+  const first = new Date(vy, vm, 1).getDay();
+  const days = new Date(vy, vm + 1, 0).getDate();
+  for (let i = 0; i < first; i++) html += `<div class="day blank"></div>`;
+  for (let d = 1; d <= days; d++) {
+    const k = key(vy, vm, d), evs = byDate[k] || [];
+    const cls = ["day", evs.length && "has", k === todayKey && "today"].filter(Boolean).join(" ");
+    html += `<div class="${cls}" ${evs.length ? `data-k="${k}"` : ""}><span class="n">${d}</span>` +
+      evs.map(e => `<span class="dot">${e.title}</span>`).join("") + `</div>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll(".has").forEach(el =>
+    el.onclick = () => document.getElementById("d-" + el.dataset.k)?.scrollIntoView({ behavior: "smooth" }));
+}
+document.getElementById("prev").onclick = () => { if (--vm < 0) { vm = 11; vy--; } renderCal(); };
+document.getElementById("next").onclick = () => { if (++vm > 11) { vm = 0; vy++; } renderCal(); };
+
+function renderEvents() {
+  const dates = Object.keys(byDate).filter(d => d >= todayKey).sort();
+  document.getElementById("events").innerHTML = dates.length ? dates.map(d => {
+    const label = new Date(d + "T12:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    return `<section id="d-${d}"><div class="date-label">${label}</div>` + byDate[d].map(e => `
+      <article class="event">
+        <h3><a href="${e.url}">${e.title}</a></h3>
+        <div class="org">${e.org}</div>
+        <p>${e.summary}</p>
+        <div class="chips">${(e.tags || []).map(t => `<span class="chip">${t}</span>`).join("")}</div>
+        ${e.cities ? `<table>${e.cities.map(c => `<tr><td><strong>${c.name}</strong></td><td>${c.time}</td>
+          <td>${c.links.map(([n, u]) => `<a href="${u}">${n}</a>`).join("")}</td></tr>`).join("")}</table>` : ""}
+        <div class="actions">${e.buttons.map(([n, u, p]) => `<a class="btn${p ? " primary" : ""}" href="${u}">${n}</a>`).join("")}</div>
+      </article>`).join("") + `</section>`;
+  }).join("") : `<p>No upcoming events yet.</p>`;
+}
+
+renderCal();
+renderEvents();
+</script>
+</body>
+</html>
